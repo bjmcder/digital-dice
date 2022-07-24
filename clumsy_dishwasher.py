@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.special as sps
 
+
 def analytical_solution() -> float:
     """
     Compute the analytical probability of a dishwasher breaking 4 dishes in a
@@ -25,7 +26,11 @@ def analytical_solution() -> float:
 
     return clumsy_analytic
 
-def monte_carlo_solution(n_trials: int, seed: int = 23072022) -> float:
+def monte_carlo_solution(n_trials: int,
+                         n_dishwashers: int = 5,
+                         clumsy_threshold: int = 4,
+                         breakage_probability: float = 0.2,
+                         seed: int = 23072022) -> float:
     """
     Using a Monte Carlo method, compute the probability of a dishwasher breaking
     4 dishes in a row given that 5 dishes were broken in a week by 5 dishwashers
@@ -48,16 +53,16 @@ def monte_carlo_solution(n_trials: int, seed: int = 23072022) -> float:
 
     # Generate a numpy array of random numbers in [0, 1]. Each row has 5
     # entries corresponding to the five dishwashers.
-    random_numbers = rng.random([n_trials, 5])
+    random_numbers = rng.random([n_dishwashers, n_trials])
 
     # In each row, a dish was broken if the random number is less than 0.2.
     # The number of dishes broken is the number of entries in the row that are
     # less than 0.2.
-    n_broken = np.sum(random_numbers < 0.2, axis=1)
+    n_broken = np.sum(random_numbers < breakage_probability, axis=0)
 
     # If the number of dishes broken in a given trial is greater than 3, then
     # the dishwasher is considered to be clumsy.
-    clumsy_count = n_broken[n_broken > 3].size
+    clumsy_count = n_broken[n_broken >= clumsy_threshold].size
 
     return clumsy_count / n_trials
 
