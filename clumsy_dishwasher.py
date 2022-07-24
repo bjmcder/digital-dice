@@ -17,8 +17,8 @@ def analytical_solution() -> float:
     # dishwashers is given by 5^5
     total_possibilities = np.power(5, 5)
 
-    # There are 4*(5 choose 4) + (5 choose 5) ways to assign the 4 broken dishes to the clumsy
-    # dishwasher
+    # There are 4*(5 choose 4) + (5 choose 5) ways to assign the 4 broken
+    # dishes to the clumsy dishwasher
     clumsy_possibilities = 4 * sps.comb(5, 4) + sps.comb(5, 5)
 
     # The probability of a dishwasher breaking 4 dishes in a row is:
@@ -53,7 +53,7 @@ def monte_carlo_solution(n_trials: int,
 
     # Generate a numpy array of random numbers in [0, 1]. Each row has 5
     # entries corresponding to the five dishwashers.
-    random_numbers = rng.random([n_dishwashers, n_trials])
+    random_numbers = rng.uniform(0.0, 1.0, [n_dishwashers, n_trials])
 
     # In each row, a dish was broken if the random number is less than 0.2.
     # The number of dishes broken is the number of entries in the row that are
