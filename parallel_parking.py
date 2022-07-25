@@ -3,21 +3,24 @@ import numpy as np
 def analytical_solution():
     pass
 
-def monte_carlo_solution(n_trials: int,
-                         n_cars: int = 3,
-                         seed: int = 24072022) -> float:
+def compute_nearest_neighbors(car_positions: np.ndarray) -> np.ndarray:
     """
-    Using the Monte Carlo method, determine if a car drawn at random from N
-    cars parking along a street of length L is one of a pair of mutual nearest
-    neighbors. We can assume L is of unit length.
+    Given a sorted array of car parking positions, compute each car's nearest
+    neighbor.
+
+    Parameters
+    ----------
+    car_positions : numpy.ndarray
+        The array of car parking positions.
+
+    Returns
+    -------
+    numpy.ndarray
+        The array of nearest neighbors.
     """
 
-    # Generate a random sequence of N cars' parking positions.
-    rng = np.random.default_rng(seed)
-    car_positions = rng.uniform(0, 1, [n_cars, n_trials])
-
-    # Sort the car positions in ascending order.
-    car_positions.sort(axis=0)
+    n_cars = car_positions.shape[0]
+    n_trials = car_positions.shape[1]
 
     # Get the indices of the nearest neighbors of each car position
     # (i.e., the indices of the cars that are closest to each car position).
@@ -43,6 +46,43 @@ def monte_carlo_solution(n_trials: int,
     # car, and the nearest neighbor of the last car is the second-to-last car.
     nearest_neighbors[0, :] = 1
     nearest_neighbors[-1, :] = n_cars - 2
+
+    return nearest_neighbors
+
+
+def monte_carlo_solution(n_trials: int,
+                         n_cars: int = 3,
+                         seed: int = 24072022) -> float:
+    """
+    Using the Monte Carlo method, determine if a car drawn at random from N
+    cars parking along a street of length L is one of a pair of mutual nearest
+    neighbors. We can assume L is of unit length.
+
+    Parameters
+    ----------
+    n_trials : int
+        The number of trials to run.
+    n_cars : int
+        The number of cars on the street.
+    seed : int
+        The seed for the random number generator.
+
+    Returns
+    -------
+    float
+        The probability of a car drawn at random from N cars being one of a pair
+        of mutual nearest neighbors.
+    """
+
+    # Generate a random sequence of N cars' parking positions.
+    rng = np.random.default_rng(seed)
+    car_positions = rng.uniform(0, 1, [n_cars, n_trials])
+
+    # Sort the car positions in ascending order.
+    car_positions.sort(axis=0)
+
+    # Compute the nearest neighbors of each car.
+    nearest_neighbors = compute_nearest_neighbors(car_positions)
 
     print(nearest_neighbors)
 
