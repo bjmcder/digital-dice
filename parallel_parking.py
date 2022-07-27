@@ -22,12 +22,13 @@ def compute_nearest_neighbors(car_positions: np.ndarray) -> np.ndarray:
     n_cars = car_positions.shape[0]
     n_trials = car_positions.shape[1]
 
-    # Get the indices of the nearest neighbors of each car position
-    # (i.e., the indices of the cars that are closest to each car position).
+    # Start by generating n_trials columns of sequential numbers from 0 to
+    # n_cars-1. We will adjust these indices to correspond to the nearest
+    # neighbor of each car, e.g. i+1 or i-1.
     nearest_neighbors = np.indices([n_cars, n_trials], dtype=int)[0]
 
-    # For each car position, find the index of its nearest neighbor
-    # (i.e., the index of the car that is closest to it).
+    # For each car position, compute the distances to the cars in front and
+    # behind it.
     next_positions = np.roll(car_positions, -1, axis=0)
     prev_positions = np.roll(car_positions, 1, axis=0)
 
@@ -42,8 +43,9 @@ def compute_nearest_neighbors(car_positions: np.ndarray) -> np.ndarray:
     nearest_neighbors[fwd_mask] += 1
     nearest_neighbors[bwd_mask] -= 1
 
-    # Boundary conditions: The nearest neighbor of the first car is the second
-    # car, and the nearest neighbor of the last car is the second-to-last car.
+    # Boundary conditions: The nearest neighbor of the first car is always the
+    # second car, and the nearest neighbor of the last car is always the
+    # second-to-last car.
     nearest_neighbors[0, :] = 1
     nearest_neighbors[-1, :] = n_cars - 2
 
@@ -84,7 +86,27 @@ def monte_carlo_solution(n_trials: int,
     # Compute the nearest neighbors of each car.
     nearest_neighbors = compute_nearest_neighbors(car_positions)
 
-    print(nearest_neighbors)
+    # We can formally define a mututal nearest neighbor pair with the
+    # condition:
+    #
+    # (nearest_neighbors[i] == i+1) & (nearest_neighbors[i+1] == i)
+    idxs = np.indices([n_cars, n_trials], dtype=int)[0]
+    next_idxs = np.roll(idxs, -1, axis=0)
+
+    next_nns = np.roll(nearest_neighbors, -1, axis=0)
+
+    mnn_mask = (nearest_neighbors == next_idxs) & (next_nns == idxs)
+
+    # The probability of a car drawn at random from N cars being one of a pair
+    # of mutual nearest neighbors is the fraction of trials that satisfy the
+    # condition.
+    total_mutual_nns = np.count_nonzero(mnn_mask)
+
+    mutual_probability = (2*total_mutual_nns) / (n_cars*n_trials)
+
+    return mutual_probability
+
+
 
 def main():
     """
@@ -98,7 +120,9 @@ def main():
     a pair of mutual nearest neighbors?
     """
 
-    mc_probability = monte_carlo_solution(n_trials=5, n_cars=4, seed=24072022)
+    mc_probability = monte_carlo_solution(n_trials=1000000,
+                                          n_cars=100,
+                                          seed=24072022)
 
     print(mc_probability)
 
