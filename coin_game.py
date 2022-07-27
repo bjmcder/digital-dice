@@ -79,20 +79,50 @@ def monte_carlo_solution(n_trials: int,
     l, m, n = coin_counts
     p = coin_bias
 
-    player_status = np.array(coin_counts)
-
     # Initialize three independent random number generators corresponding
     # to the three players.
     rng_l = np.random.default_rng(seed_l)
     rng_m = np.random.default_rng(seed_m)
     rng_n = np.random.default_rng(seed_n)
 
-    # Generate arrays of coin flips (sampled from the binomial distribution)
-    # for each player for the total number of trials.
-    flips_l = rng_l.binomial(1, p, [l, n_trials])
-    flips_m = rng_m.binomial(1, p, [m, n_trials])
-    flips_n = rng_n.binomial(1, p, [n, n_trials])
+    # This is a naive loopy implementation of the Monte Carlo solution.
+    # TODO: Implement a more efficient vectorized solution using numpy arrays.
 
+    total_flips = 0
+
+    for _ in range(n_trials):
+
+        # Initialize the coin counts for each player.
+        player_status = np.array(coin_counts)
+        trial_flips = 0
+
+        while not np.isin(0, player_status):
+
+            # Flip the coins
+            flip = np.array([rng_l.binomial(1, p),
+                             rng_m.binomial(1, p),
+                             rng_n.binomial(1, p)])
+
+            trial_flips += 1
+
+            # If all coins show the same side, then nothing happens.
+            if flip.sum() == 0 or flip.sum() == 3:
+                pass
+
+            # If two coins show the same side, then those players give their coins
+            # to the odd person whose coins showed the opposite side.
+            elif flip.sum() == 1:
+                player_status[flip == 0] -= 1
+                player_status[flip == 1] += 1
+
+
+            elif flip.sum() == 2:
+                player_status[flip == 0] += 1
+                player_status[flip == 1] -= 1
+
+        total_flips += trial_flips
+
+    return total_flips / n_trials
 
 def main():
     """
@@ -119,7 +149,7 @@ def main():
     analytical_flips = analytical_solution(coin_counts, coin_bias)
 
     # Monte Carlo solution
-    monte_carlo_flips = monte_carlo_solution(n_trials=1000000,
+    monte_carlo_flips = monte_carlo_solution(n_trials=100000,
                                              coin_counts=coin_counts,
                                              coin_bias=coin_bias)
 
