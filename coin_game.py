@@ -115,7 +115,6 @@ def monte_carlo_solution(n_trials: int,
                 player_status[flip == 0] -= 1
                 player_status[flip == 1] += 1
 
-
             elif flip.sum() == 2:
                 player_status[flip == 0] += 1
                 player_status[flip == 1] -= 1
@@ -142,7 +141,7 @@ def main():
     print("*** A Curious Coin-Flipping Game***")
 
     # Case 1: All coins are fair (p = 0.5)
-    coin_counts = create_coin_counts(l=1, m=1, n=1)
+    coin_counts = create_coin_counts(l=1, m=2, n=3)
     coin_bias = 0.5
 
     # Analytical solution
