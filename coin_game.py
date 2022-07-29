@@ -70,59 +70,33 @@ def analytical_solution(coin_counts: CoinCounts,
 def monte_carlo_solution(n_trials: int,
                          coin_counts: CoinCounts,
                          coin_bias: float = 0.5,
-                         seed_l: int = 26072302,
-                         seed_m: int = 97181713,
-                         seed_n: int = 55283621) -> float:
+                         seed: int = 55283621) -> float:
     """
     """
     # Unpack the coin counts and biases
     l, m, n = coin_counts
     p = coin_bias
 
-    # Initialize three independent random number generators corresponding
-    # to the three players.
-    rng_l = np.random.default_rng(seed_l)
-    rng_m = np.random.default_rng(seed_m)
-    rng_n = np.random.default_rng(seed_n)
+    n_players = len(coin_counts)
+    player_status = np.array([l, m, n])
 
-    # This is a naive loopy implementation of the Monte Carlo solution.
-    # TODO: Implement a more efficient vectorized solution using numpy arrays.
+    # Initialize the random number generator
+    rng = np.random.default_rng(seed=seed)
 
-    total_flips = 0
+    # A coin flip round can be represented as a 3-element array of binary
+    # values. We want to generate a long array of these 3-element arrays and
+    # post-process the results to simulate the game.
+    flip_candidates = rng.binomial(n=1, p=p, size=[n_players, n_trials])
 
-    for _ in range(n_trials):
+    # Sum the coin flips to determine if a win occured. If the sum is equal
+    # to zero or the number of players, then no one has won. Otherwise, we have
+    # a winner and we can determine who it is by finding the odd one out.
+    flip_sum = np.sum(flip_candidates, axis=0)
+    win_occured = ((flip_sum != 0) | (flip_sum != n_players))
 
-        # Initialize the coin counts for each player.
-        player_status = np.array(coin_counts)
-        trial_flips = 0
-
-        while not np.isin(0, player_status):
-
-            # Flip the coins
-            flip = np.array([rng_l.binomial(1, p),
-                             rng_m.binomial(1, p),
-                             rng_n.binomial(1, p)])
-
-            trial_flips += 1
-
-            # If all coins show the same side, then nothing happens.
-            if flip.sum() == 0 or flip.sum() == 3:
-                pass
-
-            # If two coins show the same side, then those players give their coins
-            # to the odd person whose coins showed the opposite side.
-            elif flip.sum() == 1:
-                player_status[flip == 0] -= 1
-                player_status[flip == 1] += 1
+    # Find the index of the winning player
 
 
-            elif flip.sum() == 2:
-                player_status[flip == 0] += 1
-                player_status[flip == 1] -= 1
-
-        total_flips += trial_flips
-
-    return total_flips / n_trials
 
 def main():
     """
@@ -149,7 +123,7 @@ def main():
     analytical_flips = analytical_solution(coin_counts, coin_bias)
 
     # Monte Carlo solution
-    monte_carlo_flips = monte_carlo_solution(n_trials=100000,
+    monte_carlo_flips = monte_carlo_solution(n_trials=20,
                                              coin_counts=coin_counts,
                                              coin_bias=coin_bias)
 
