@@ -86,16 +86,29 @@ def monte_carlo_solution(n_trials: int,
     # A coin flip round can be represented as a 3-element array of binary
     # values. We want to generate a long array of these 3-element arrays and
     # post-process the results to simulate the game.
-    flip_candidates = rng.binomial(n=1, p=p, size=[n_players, n_trials])
+    flips = rng.binomial(n=1, p=p, size=[n_players, n_trials])
 
     # Sum the coin flips to determine if a win occured. If the sum is equal
     # to zero or the number of players, then no one has won. Otherwise, we have
     # a winner and we can determine who it is by finding the odd one out.
-    flip_sum = np.sum(flip_candidates, axis=0)
-    win_occured = ((flip_sum != 0) | (flip_sum != n_players))
+    flip_sum = np.sum(flips, axis=0)
 
-    # Find the index of the winning player
+    no_win = ((flip_sum == 0) + (flip_sum == n_players))
+    heads_win = (flip_sum == 1)
+    tails_win = (flip_sum == 2)
 
+    # Find the index of the winning player. If the flip sum is equal to 1,
+    # the winner is the player whose coin is 1. If the flip sum is equal to
+    # 2, the winner is the player whose coins is 0. For cases with no winner,
+    # the index is set to -1.
+    winners = np.empty(flip_sum.size, dtype=int)
+
+    winners[no_win] = -1
+    winners[heads_win] = np.argmax(flips[:, heads_win], axis=0)
+    winners[tails_win] = np.argmin(flips[:, tails_win], axis=0)
+
+    # Update the number of coins for each player. The winner gains two coins,
+    # each of the losers loses one.
 
 
 def main():
@@ -123,7 +136,7 @@ def main():
     analytical_flips = analytical_solution(coin_counts, coin_bias)
 
     # Monte Carlo solution
-    monte_carlo_flips = monte_carlo_solution(n_trials=20,
+    monte_carlo_flips = monte_carlo_solution(n_trials=200,
                                              coin_counts=coin_counts,
                                              coin_bias=coin_bias)
 
