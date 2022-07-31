@@ -70,58 +70,86 @@ def analytical_solution(coin_counts: CoinCounts,
 def monte_carlo_solution(n_trials: int,
                          coin_counts: CoinCounts,
                          coin_bias: float = 0.5,
-                         seed_l: int = 26072302,
-                         seed_m: int = 97181713,
-                         seed_n: int = 55283621) -> float:
+                         seed: int = 55283621) -> float:
     """
     """
     # Unpack the coin counts and biases
     l, m, n = coin_counts
     p = coin_bias
 
-    # Initialize three independent random number generators corresponding
-    # to the three players.
-    rng_l = np.random.default_rng(seed_l)
-    rng_m = np.random.default_rng(seed_m)
-    rng_n = np.random.default_rng(seed_n)
+    n_players = len(coin_counts)
+    player_status = np.array([l, m, n])
 
-    # This is a naive loopy implementation of the Monte Carlo solution.
-    # TODO: Implement a more efficient vectorized solution using numpy arrays.
+    # Initialize the random number generator
+    rng = np.random.default_rng(seed=seed)
 
-    total_flips = 0
+    batch_size = n_players * n_trials
 
-    for _ in range(n_trials):
+    flip_count = 0
+    elimination_count = 0
 
-        # Initialize the coin counts for each player.
-        player_status = np.array(coin_counts)
-        trial_flips = 0
+    while elimination_count < n_trials:
 
-        while not np.isin(0, player_status):
+        # A coin flip round can be represented as a 3-element array of binary
+        # values. We want to generate a long array of these 3-element arrays and
+        # post-process the results to simulate the game.
+        flips = rng.binomial(n=1, p=p, size=[n_players, batch_size])
 
-            # Flip the coins
-            flip = np.array([rng_l.binomial(1, p),
-                             rng_m.binomial(1, p),
-                             rng_n.binomial(1, p)])
+        # Sum the coin flips to determine if a win occured. If the sum is equal
+        # to zero or the number of players, then no one has won. Otherwise, we have
+        # a winner and we can determine who it is by finding the odd one out.
+        flip_sum = np.sum(flips, axis=0)
 
-            trial_flips += 1
+        no_win = ((flip_sum == 0) + (flip_sum == n_players))
+        heads_win = (flip_sum == 1)
+        tails_win = (flip_sum == 2)
 
-            # If all coins show the same side, then nothing happens.
-            if flip.sum() == 0 or flip.sum() == 3:
-                pass
+        # Find the index of the winning player. If the flip sum is equal to 1,
+        # the winner is the player whose coin is 1. If the flip sum is equal to
+        # 2, the winner is the player whose coins is 0. For cases with no winner,
+        # the index is set to -1.
+        winners = np.empty(flip_sum.size, dtype=int)
 
-            # If two coins show the same side, then those players give their coins
-            # to the odd person whose coins showed the opposite side.
-            elif flip.sum() == 1:
-                player_status[flip == 0] -= 1
-                player_status[flip == 1] += 1
+        winners[no_win] = -1
+        winners[heads_win] = np.argmax(flips[:, heads_win], axis=0)
+        winners[tails_win] = np.argmin(flips[:, tails_win], axis=0)
 
-            elif flip.sum() == 2:
-                player_status[flip == 0] += 1
-                player_status[flip == 1] -= 1
+        # Update the number of coins for each player. The winner gains two coins,
+        # each of the losers loses one.
+        sequence_count = 0
 
-        total_flips += trial_flips
+        for i in range(winners.size):
 
-    return total_flips / n_trials
+            # Elimination -
+            if np.less_equal(player_status.all(), 0):
+
+                # Tally results
+                elimination_count += 1
+                flip_count += sequence_count
+
+                # Reset counters
+                sequence_count = 0
+                player_status = np.array([l, m, n])
+
+                continue
+
+            # No winner, increment the flip count but no change in player status
+            if winners[i] == -1:
+                sequence_count += 1
+
+            # Winner, increment the flip count and update the player status. The
+            # winner gains two coins, each of the losers loses one.
+            else:
+                sequence_count += 1
+
+                # Subtracting 1 from everybody then adding 3 back to the winner
+                # is more succinct than trying to mask the non-winning indices to
+                # subtract 1 from just the losing players.
+                player_status -= 1
+                player_status[winners[i]] += 3
+
+    return flip_count / elimination_count
+
 
 def main():
     """
