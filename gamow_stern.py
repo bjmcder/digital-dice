@@ -12,7 +12,13 @@ def monte_carlo_solution(n_trials: int,
                          seed: int = 31072022) -> float:
     """
     """
-    pass
+
+    rng = np.random.default_rng(seed)
+
+    # Convert Gamow's floor to the total fraction of the building height such
+    # that the first floor is 0 and the top floor is 1.
+    floor_fraction = gamow_floor / (n_floors-1)
+
 
 def main():
     """
@@ -33,7 +39,23 @@ def main():
     the elevator will be on its way down (the wrong direction) when Gamow's
     office on the G'th floor is visited.
     """
-    pass
+
+    n_trials = 100000
+    n_floors = 7
+    n_elevators = 1
+    gamow_floor = 2
+    seed = 31072022
+
+    mc_solution = monte_carlo_solution(n_trials,
+                                       n_floors,
+                                       n_elevators,
+                                       gamow_floor,
+                                       seed)
+
+    print("*** The Gamow-Stern Elevator Problem ***")
+
+    print(f"Monte Carlo solution: {mc_solution}")
+
 
 
 if __name__ == '__main__':
